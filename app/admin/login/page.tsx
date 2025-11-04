@@ -10,7 +10,7 @@ import { useRouter } from "next/navigation"
 import { useState } from "react"
 
 export default function AdminLoginPage() {
-  const [email, setEmail] = useState("")
+  const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -22,21 +22,27 @@ export default function AdminLoginPage() {
     setError(null)
 
     try {
-      // Mock authentication - accept any email/password for now
-      if (email && password) {
-        // Simulate API delay
-        await new Promise((resolve) => setTimeout(resolve, 1000))
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username, password }),
+      })
 
-        // Store login state
-        sessionStorage.setItem("admin_logged_in", "true")
-        sessionStorage.setItem("admin_email", email)
+      const data = await response.json()
 
-        // Redirect to dashboard
-        router.push("/admin/dashboard")
-        router.refresh()
-      } else {
-        throw new Error("Lütfen e-posta ve şifre girin")
+      if (!response.ok) {
+        throw new Error(data.error || "Giriş yapılırken bir hata oluştu")
       }
+
+      // Store user info in sessionStorage for client-side access
+      sessionStorage.setItem("admin_logged_in", "true")
+      sessionStorage.setItem("admin_user", JSON.stringify(data.user))
+
+      // Redirect to dashboard
+      router.push("/admin/dashboard")
+      router.refresh()
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "Giriş yapılırken bir hata oluştu")
     } finally {
@@ -57,22 +63,23 @@ export default function AdminLoginPage() {
             <CardHeader>
               <CardTitle className="text-2xl">Yönetici Girişi</CardTitle>
               <CardDescription>Yönetim paneline erişmek için giriş yapın</CardDescription>
-              <CardDescription className="text-xs text-amber-600 mt-2">
-                Demo: Herhangi bir e-posta ve şifre ile giriş yapabilirsiniz
+              <CardDescription className="text-xs text-green-600 mt-2 font-medium">
+                Varsayılan: Kullanıcı adı: admin, Şifre: admin123
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleLogin}>
                 <div className="flex flex-col gap-6">
                   <div className="grid gap-2">
-                    <Label htmlFor="email">E-posta</Label>
+                    <Label htmlFor="username">Kullanıcı Adı</Label>
                     <Input
-                      id="email"
-                      type="email"
-                      placeholder="admin@example.com"
+                      id="username"
+                      type="text"
+                      placeholder="admin"
                       required
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      autoComplete="username"
                     />
                   </div>
                   <div className="grid gap-2">
@@ -80,9 +87,11 @@ export default function AdminLoginPage() {
                     <Input
                       id="password"
                       type="password"
+                      placeholder="••••••••"
                       required
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
+                      autoComplete="current-password"
                     />
                   </div>
                   {error && <p className="text-sm text-red-500">{error}</p>}
