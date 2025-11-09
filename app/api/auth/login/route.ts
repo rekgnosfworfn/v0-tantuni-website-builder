@@ -5,15 +5,15 @@ import { cookies } from "next/headers"
 
 export async function POST(request: Request) {
   try {
-    const { username, password } = await request.json()
+    const { email, password } = await request.json()
 
-    console.log("Login attempt:", { username })
+    console.log("Login attempt:", { email })
 
     // Validate input
-    if (!username || !password) {
+    if (!email || !password) {
       console.log("Validation failed: missing credentials")
       return NextResponse.json(
-        { error: "Kullanıcı adı ve şifre gereklidir" },
+        { error: "Email ve şifre gereklidir" },
         { status: 400 }
       )
     }
@@ -21,11 +21,11 @@ export async function POST(request: Request) {
     // Get Supabase client
     const supabase = await createClient()
 
-    // Find user by username
+    // Find user by email
     const { data: user, error: userError } = await supabase
       .from("admin_users")
       .select("*")
-      .eq("username", username)
+      .eq("email", email)
       .single()
 
     console.log("Database query result:", {
@@ -37,14 +37,14 @@ export async function POST(request: Request) {
     if (userError || !user) {
       console.log("User not found:", userError?.message)
       return NextResponse.json(
-        { error: "Kullanıcı adı veya şifre hatalı", debug: userError?.message },
+        { error: "Email veya şifre hatalı", debug: userError?.message },
         { status: 401 }
       )
     }
 
     // Check if password_hash exists
     if (!user.password_hash) {
-      console.log("Password hash is missing for user:", username)
+      console.log("Password hash is missing for user:", email)
       return NextResponse.json(
         { error: "Kullanıcı şifresi ayarlanmamış. Lütfen SQL script'ini çalıştırın." },
         { status: 401 }
@@ -59,7 +59,7 @@ export async function POST(request: Request) {
     if (!passwordMatch) {
       console.log("Password verification failed")
       return NextResponse.json(
-        { error: "Kullanıcı adı veya şifre hatalı" },
+        { error: "Email veya şifre hatalı" },
         { status: 401 }
       )
     }
