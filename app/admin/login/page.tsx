@@ -10,7 +10,7 @@ import { useRouter } from "next/navigation"
 import { useState } from "react"
 
 export default function AdminLoginPage() {
-  const [username, setUsername] = useState("")
+  const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -27,7 +27,7 @@ export default function AdminLoginPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ email, password }),
       })
 
       const data = await response.json()
@@ -64,22 +64,22 @@ export default function AdminLoginPage() {
               <CardTitle className="text-2xl">Yönetici Girişi</CardTitle>
               <CardDescription>Yönetim paneline erişmek için giriş yapın</CardDescription>
               <CardDescription className="text-xs text-green-600 mt-2 font-medium">
-                Varsayılan: Kullanıcı adı: admin, Şifre: admin123
+                Varsayılan: Email: admin@tantuni.com, Şifre: admin123
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleLogin}>
                 <div className="flex flex-col gap-6">
                   <div className="grid gap-2">
-                    <Label htmlFor="username">Kullanıcı Adı</Label>
+                    <Label htmlFor="email">Email</Label>
                     <Input
-                      id="username"
-                      type="text"
-                      placeholder="admin"
+                      id="email"
+                      type="email"
+                      placeholder="admin@tantuni.com"
                       required
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      autoComplete="username"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      autoComplete="email"
                     />
                   </div>
                   <div className="grid gap-2">
