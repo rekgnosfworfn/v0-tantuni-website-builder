@@ -223,6 +223,22 @@ export function AdminDashboard({
             </Card>
           </Link>
 
+          <Link href="/admin/tables">
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer border-2 border-blue-200">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-blue-100 rounded-lg">
+                    <span className="text-2xl">📱</span>
+                  </div>
+                  <div>
+                    <CardTitle>Masa Yönetimi</CardTitle>
+                    <p className="text-sm text-gray-600">QR kodlar ve masa takibi</p>
+                  </div>
+                </div>
+              </CardHeader>
+            </Card>
+          </Link>
+
           <Link href="/admin/media">
             <Card className="hover:shadow-lg transition-shadow cursor-pointer">
               <CardHeader>

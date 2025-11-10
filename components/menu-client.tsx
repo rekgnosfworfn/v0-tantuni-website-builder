@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -39,14 +39,36 @@ type CartItem = Product & {
   cart_id?: string // Unique ID for cart items with different customizations
 }
 
-export function MenuClient({ categories }: { categories: Category[] }) {
+export function MenuClient({ categories, tableQR }: { categories: Category[]; tableQR?: string }) {
   const [cart, setCart] = useState<CartItem[]>([])
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [customizationDialog, setCustomizationDialog] = useState<{
     open: boolean
     product: Product | null
   }>({ open: false, product: null })
+  const [tableInfo, setTableInfo] = useState<{ id: string; table_number: number; table_name: string } | null>(null)
   const router = useRouter()
+
+  // Fetch table information if QR code is provided
+  useEffect(() => {
+    if (tableQR) {
+      fetchTableInfo(tableQR)
+    }
+  }, [tableQR])
+
+  const fetchTableInfo = async (qrCode: string) => {
+    try {
+      const response = await fetch(`/api/tables/${qrCode}`)
+      if (response.ok) {
+        const data = await response.json()
+        setTableInfo(data.table)
+        // Store in sessionStorage
+        sessionStorage.setItem("table_info", JSON.stringify(data.table))
+      }
+    } catch (error) {
+      console.error("Error fetching table info:", error)
+    }
+  }
 
   const openCustomizationDialog = async (product: Product) => {
     // Check if product has customizations
@@ -131,6 +153,21 @@ export function MenuClient({ categories }: { categories: Category[] }) {
 
   return (
     <>
+      {/* Table Info Banner */}
+      {tableInfo && (
+        <div className="bg-blue-50 border-b border-blue-200">
+          <div className="container mx-auto px-4 py-3">
+            <div className="flex items-center justify-center gap-2 text-blue-800">
+              <span className="text-lg">📍</span>
+              <span className="font-semibold">{tableInfo.table_name}</span>
+              <Badge variant="secondary" className="bg-blue-200 text-blue-800">
+                Masa {tableInfo.table_number}
+              </Badge>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="container mx-auto px-4 py-8">
         {/* Categories and Products */}
         <div className="space-y-12">
