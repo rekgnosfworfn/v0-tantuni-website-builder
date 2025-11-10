@@ -274,6 +274,22 @@ export function AdminDashboard({
 
         {/* Additional Settings */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <Link href="/admin/waiter-calls">
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer border-2 border-orange-200 bg-orange-50">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-orange-100 rounded-lg">
+                    <span className="text-2xl">🔔</span>
+                  </div>
+                  <div>
+                    <CardTitle>Garson Çağrıları</CardTitle>
+                    <p className="text-sm text-gray-600">Müşteri çağrılarını görüntüle ve yönet</p>
+                  </div>
+                </div>
+              </CardHeader>
+            </Card>
+          </Link>
+
           <Link href="/admin/profile">
             <Card className="hover:shadow-lg transition-shadow cursor-pointer border-2 border-red-200">
               <CardHeader>

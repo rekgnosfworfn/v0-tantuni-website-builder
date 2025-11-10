@@ -151,18 +151,50 @@ export function MenuClient({ categories, tableQR }: { categories: Category[]; ta
     router.push("/checkout")
   }
 
+  const handleCallWaiter = async () => {
+    if (!tableInfo) {
+      alert("Garson çağırmak için QR kod ile menüye giriş yapmalısınız")
+      return
+    }
+
+    try {
+      const response = await fetch("/api/waiter-calls", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          table_id: tableInfo.id,
+          table_number: tableInfo.table_number,
+        }),
+      })
+
+      if (response.ok) {
+        alert(`✅ Garson çağrıldı!\n${tableInfo.table_name} için garson yolda.`)
+      } else {
+        alert("Garson çağırma başarısız oldu")
+      }
+    } catch (error) {
+      console.error("Error calling waiter:", error)
+      alert("Garson çağırma başarısız oldu")
+    }
+  }
+
   return (
     <>
       {/* Table Info Banner */}
       {tableInfo && (
         <div className="bg-blue-50 border-b border-blue-200">
           <div className="container mx-auto px-4 py-3">
-            <div className="flex items-center justify-center gap-2 text-blue-800">
-              <span className="text-lg">📍</span>
-              <span className="font-semibold">{tableInfo.table_name}</span>
-              <Badge variant="secondary" className="bg-blue-200 text-blue-800">
-                Masa {tableInfo.table_number}
-              </Badge>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-blue-800">
+                <span className="text-lg">📍</span>
+                <span className="font-semibold">{tableInfo.table_name}</span>
+                <Badge variant="secondary" className="bg-blue-200 text-blue-800">
+                  Masa {tableInfo.table_number}
+                </Badge>
+              </div>
+              <Button size="sm" variant="outline" onClick={handleCallWaiter} className="bg-white">
+                🔔 Garson Çağır
+              </Button>
             </div>
           </div>
         </div>
