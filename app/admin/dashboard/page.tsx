@@ -1,5 +1,7 @@
 "use client"
 
+export const dynamic = 'force-dynamic'
+
 import { AdminDashboard } from "@/components/admin-dashboard"
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"

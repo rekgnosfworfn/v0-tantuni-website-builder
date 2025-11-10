@@ -1,5 +1,7 @@
 "use client"
 
+export const dynamic = 'force-dynamic'
+
 import { AdminHeader } from "@/components/admin-header"
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
