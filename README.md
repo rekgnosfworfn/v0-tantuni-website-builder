@@ -19,6 +19,7 @@ Modern, full-stack restaurant ordering website with comprehensive admin panel.
 - 🖼️ Image upload with Vercel Blob
 - 📚 Media library
 - ⚙️ Site settings (name, logo, colors, welcome text)
+- 👤 Profile settings (update name, email, password)
 
 ## Tech Stack
 
