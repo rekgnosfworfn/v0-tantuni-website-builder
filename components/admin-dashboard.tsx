@@ -16,6 +16,10 @@ type Stats = {
   totalOrders: number
   pendingOrders: number
   totalProducts: number
+  todayDineIn?: number
+  todayTakeaway?: number
+  todayTotal?: number
+  todayRevenue?: number
 }
 
 type Order = {
@@ -86,6 +90,58 @@ export function AdminDashboard({
       </header>
 
       <div className="container mx-auto px-4 py-8">
+        {/* Today's Summary - Highlighted Section */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold mb-4 text-gray-800">📊 Bugünün Özeti</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-blue-100">İç Mekan Siparişleri</CardTitle>
+                <span className="text-3xl">🍽️</span>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold">{stats.todayDineIn || 0}</div>
+                <p className="text-xs text-blue-100 mt-1">Bugün</p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-green-100">Gel-Al Siparişleri</CardTitle>
+                <span className="text-3xl">🥡</span>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold">{stats.todayTakeaway || 0}</div>
+                <p className="text-xs text-green-100 mt-1">Bugün</p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-purple-100">Toplam Sipariş</CardTitle>
+                <span className="text-3xl">📦</span>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold">{stats.todayTotal || 0}</div>
+                <p className="text-xs text-purple-100 mt-1">Bugün</p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-red-500 to-red-600 text-white">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-red-100">Bugünün Geliri</CardTitle>
+                <span className="text-3xl">💰</span>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold">{(stats.todayRevenue || 0).toFixed(2)} ₺</div>
+                <p className="text-xs text-red-100 mt-1">Bugün</p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* General Stats */}
+        <h2 className="text-xl font-bold mb-4 text-gray-800">📈 Genel İstatistikler</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {/* Quick Stats */}
           <Card>
