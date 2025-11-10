@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
@@ -25,8 +26,13 @@ type Order = {
   order_items: OrderItem[]
 }
 
-export function OrdersManagement({ orders: initialOrders }: { orders: Order[] }) {
-  const [orders, setOrders] = useState(initialOrders)
+export function OrdersManagement({
+  orders,
+  onRefresh,
+}: {
+  orders: Order[]
+  onRefresh?: () => void
+}) {
   const [filter, setFilter] = useState<string>("all")
 
   const updateOrderStatus = async (orderId: string, newStatus: string) => {
@@ -39,7 +45,10 @@ export function OrdersManagement({ orders: initialOrders }: { orders: Order[] })
 
       if (!response.ok) throw new Error("Failed to update order")
 
-      setOrders((prev) => prev.map((order) => (order.id === orderId ? { ...order, status: newStatus } : order)))
+      // Refresh orders from server
+      if (onRefresh) {
+        onRefresh()
+      }
     } catch (error) {
       console.error("Error updating order:", error)
       alert("Sipariş güncellenirken bir hata oluştu.")
@@ -68,7 +77,15 @@ export function OrdersManagement({ orders: initialOrders }: { orders: Order[] })
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold">Sipariş Yönetimi</h2>
+        <div>
+          <h2 className="text-3xl font-bold">Sipariş Yönetimi</h2>
+          <p className="text-sm text-gray-600 mt-1">🔴 Canlı - Yeni siparişler otomatik görünür</p>
+        </div>
+        {onRefresh && (
+          <Button onClick={onRefresh} variant="outline" size="sm">
+            🔄 Yenile
+          </Button>
+        )}
       </div>
 
       <Tabs value={filter} onValueChange={setFilter}>

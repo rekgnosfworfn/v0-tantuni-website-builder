@@ -81,7 +81,9 @@ const mockCategories = [
   },
 ]
 
-export default function MenuPage() {
+export default function MenuPage({ searchParams }: { searchParams: { table?: string } }) {
+  const tableQR = searchParams.table
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -100,7 +102,7 @@ export default function MenuPage() {
       </header>
 
       {/* Menu Content */}
-      <MenuClient categories={mockCategories} />
+      <MenuClient categories={mockCategories} tableQR={tableQR} />
     </div>
   )
 }

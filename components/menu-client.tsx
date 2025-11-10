@@ -1,12 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import Image from "next/image"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { useRouter } from "next/navigation"
+import { ProductCustomizationDialog } from "@/components/product-customization-dialog"
 
 type Product = {
   id: string
@@ -24,30 +25,102 @@ type Category = {
   products: Product[]
 }
 
-type CartItem = Product & {
-  quantity: number
+type SelectedCustomization = {
+  customization_id: string
+  customization_name: string
+  option_ids: string[]
+  options: { id: string; label: string; price_adjustment: number }[]
 }
 
-export function MenuClient({ categories }: { categories: Category[] }) {
+type CartItem = Product & {
+  quantity: number
+  customizations?: SelectedCustomization[]
+  customized_price?: number
+  cart_id?: string // Unique ID for cart items with different customizations
+}
+
+export function MenuClient({ categories, tableQR }: { categories: Category[]; tableQR?: string }) {
   const [cart, setCart] = useState<CartItem[]>([])
   const [isCartOpen, setIsCartOpen] = useState(false)
+  const [customizationDialog, setCustomizationDialog] = useState<{
+    open: boolean
+    product: Product | null
+  }>({ open: false, product: null })
+  const [tableInfo, setTableInfo] = useState<{ id: string; table_number: number; table_name: string } | null>(null)
   const router = useRouter()
 
-  const addToCart = (product: Product) => {
-    setCart((prev) => {
-      const existing = prev.find((item) => item.id === product.id)
-      if (existing) {
-        return prev.map((item) => (item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item))
+  // Fetch table information if QR code is provided
+  useEffect(() => {
+    if (tableQR) {
+      fetchTableInfo(tableQR)
+    }
+  }, [tableQR])
+
+  const fetchTableInfo = async (qrCode: string) => {
+    try {
+      const response = await fetch(`/api/tables/${qrCode}`)
+      if (response.ok) {
+        const data = await response.json()
+        setTableInfo(data.table)
+        // Store in sessionStorage
+        sessionStorage.setItem("table_info", JSON.stringify(data.table))
       }
-      return [...prev, { ...product, quantity: 1 }]
+    } catch (error) {
+      console.error("Error fetching table info:", error)
+    }
+  }
+
+  const openCustomizationDialog = async (product: Product) => {
+    // Check if product has customizations
+    try {
+      const response = await fetch(`/api/products/${product.id}/customizations`)
+      if (response.ok) {
+        const data = await response.json()
+        if (data.customizations && data.customizations.length > 0) {
+          // Product has customizations, open dialog
+          setCustomizationDialog({ open: true, product })
+        } else {
+          // No customizations, add directly to cart
+          addToCart(product, [], product.price)
+        }
+      } else {
+        // Error or no customizations, add directly to cart
+        addToCart(product, [], product.price)
+      }
+    } catch (error) {
+      console.error("Error checking customizations:", error)
+      // Fallback: add directly to cart
+      addToCart(product, [], product.price)
+    }
+  }
+
+  const addToCart = (product: Product, customizations: SelectedCustomization[], customized_price: number) => {
+    setCart((prev) => {
+      // Create unique cart ID based on product and customizations
+      const cartId = `${product.id}-${JSON.stringify(customizations.map((c) => c.option_ids).sort())}`
+
+      const existing = prev.find((item) => item.cart_id === cartId)
+      if (existing) {
+        return prev.map((item) => (item.cart_id === cartId ? { ...item, quantity: item.quantity + 1 } : item))
+      }
+      return [
+        ...prev,
+        {
+          ...product,
+          quantity: 1,
+          customizations: customizations.length > 0 ? customizations : undefined,
+          customized_price: customizations.length > 0 ? customized_price : undefined,
+          cart_id: cartId,
+        },
+      ]
     })
   }
 
-  const updateQuantity = (productId: string, delta: number) => {
+  const updateQuantity = (cartId: string, delta: number) => {
     setCart((prev) => {
       return prev
         .map((item) => {
-          if (item.id === productId) {
+          if (item.cart_id === cartId) {
             const newQuantity = item.quantity + delta
             return { ...item, quantity: Math.max(0, newQuantity) }
           }
@@ -57,12 +130,15 @@ export function MenuClient({ categories }: { categories: Category[] }) {
     })
   }
 
-  const removeFromCart = (productId: string) => {
-    setCart((prev) => prev.filter((item) => item.id !== productId))
+  const removeFromCart = (cartId: string) => {
+    setCart((prev) => prev.filter((item) => item.cart_id !== cartId))
   }
 
   const getTotalPrice = () => {
-    return cart.reduce((sum, item) => sum + item.price * item.quantity, 0)
+    return cart.reduce((sum, item) => {
+      const itemPrice = item.customized_price || item.price
+      return sum + itemPrice * item.quantity
+    }, 0)
   }
 
   const getTotalItems = () => {
@@ -75,8 +151,55 @@ export function MenuClient({ categories }: { categories: Category[] }) {
     router.push("/checkout")
   }
 
+  const handleCallWaiter = async () => {
+    if (!tableInfo) {
+      alert("Garson çağırmak için QR kod ile menüye giriş yapmalısınız")
+      return
+    }
+
+    try {
+      const response = await fetch("/api/waiter-calls", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          table_id: tableInfo.id,
+          table_number: tableInfo.table_number,
+        }),
+      })
+
+      if (response.ok) {
+        alert(`✅ Garson çağrıldı!\n${tableInfo.table_name} için garson yolda.`)
+      } else {
+        alert("Garson çağırma başarısız oldu")
+      }
+    } catch (error) {
+      console.error("Error calling waiter:", error)
+      alert("Garson çağırma başarısız oldu")
+    }
+  }
+
   return (
     <>
+      {/* Table Info Banner */}
+      {tableInfo && (
+        <div className="bg-blue-50 border-b border-blue-200">
+          <div className="container mx-auto px-4 py-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-blue-800">
+                <span className="text-lg">📍</span>
+                <span className="font-semibold">{tableInfo.table_name}</span>
+                <Badge variant="secondary" className="bg-blue-200 text-blue-800">
+                  Masa {tableInfo.table_number}
+                </Badge>
+              </div>
+              <Button size="sm" variant="outline" onClick={handleCallWaiter} className="bg-white">
+                🔔 Garson Çağır
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="container mx-auto px-4 py-8">
         {/* Categories and Products */}
         <div className="space-y-12">
@@ -105,7 +228,10 @@ export function MenuClient({ categories }: { categories: Category[] }) {
                       <p className="text-2xl font-bold text-red-600">{product.price.toFixed(2)} ₺</p>
                     </CardContent>
                     <CardFooter className="p-4 pt-0">
-                      <Button onClick={() => addToCart(product)} className="w-full bg-red-600 hover:bg-red-700">
+                      <Button
+                        onClick={() => openCustomizationDialog(product)}
+                        className="w-full bg-red-600 hover:bg-red-700"
+                      >
                         + Sepete Ekle
                       </Button>
                     </CardFooter>
@@ -116,6 +242,22 @@ export function MenuClient({ categories }: { categories: Category[] }) {
           ))}
         </div>
       </div>
+
+      {/* Customization Dialog */}
+      {customizationDialog.product && (
+        <ProductCustomizationDialog
+          open={customizationDialog.open}
+          onOpenChange={(open) => setCustomizationDialog({ open, product: open ? customizationDialog.product : null })}
+          productId={customizationDialog.product.id}
+          productName={customizationDialog.product.name}
+          productPrice={customizationDialog.product.price}
+          onAddToCart={(customizations, totalPrice) => {
+            if (customizationDialog.product) {
+              addToCart(customizationDialog.product, customizations, totalPrice)
+            }
+          }}
+        />
+      )}
 
       {/* Floating Cart Button */}
       {cart.length > 0 && (
@@ -139,7 +281,7 @@ export function MenuClient({ categories }: { categories: Category[] }) {
               {/* Cart Items */}
               <div className="flex-1 overflow-y-auto space-y-4">
                 {cart.map((item) => (
-                  <Card key={item.id}>
+                  <Card key={item.cart_id}>
                     <CardContent className="p-4">
                       <div className="flex items-start gap-4">
                         <div className="relative w-20 h-20 flex-shrink-0 bg-gray-200 rounded">
@@ -155,19 +297,49 @@ export function MenuClient({ categories }: { categories: Category[] }) {
                         </div>
                         <div className="flex-1">
                           <h3 className="font-semibold">{item.name}</h3>
-                          <p className="text-sm text-gray-600">{item.price.toFixed(2)} ₺</p>
+
+                          {/* Show customizations if any */}
+                          {item.customizations && item.customizations.length > 0 && (
+                            <div className="mt-1 space-y-1">
+                              {item.customizations.map((customization) =>
+                                customization.options.map((option) => (
+                                  <p key={option.id} className="text-xs text-gray-600">
+                                    • {option.label}
+                                    {option.price_adjustment !== 0 && (
+                                      <span className="ml-1">
+                                        ({option.price_adjustment > 0 ? "+" : ""}
+                                        {option.price_adjustment.toFixed(2)} ₺)
+                                      </span>
+                                    )}
+                                  </p>
+                                )),
+                              )}
+                            </div>
+                          )}
+
+                          <p className="text-sm text-gray-600 mt-1">
+                            {(item.customized_price || item.price).toFixed(2)} ₺
+                          </p>
                           <div className="flex items-center gap-2 mt-2">
-                            <Button size="sm" variant="outline" onClick={() => updateQuantity(item.id, -1)}>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => updateQuantity(item.cart_id || item.id, -1)}
+                            >
                               −
                             </Button>
                             <span className="w-8 text-center font-semibold">{item.quantity}</span>
-                            <Button size="sm" variant="outline" onClick={() => updateQuantity(item.id, 1)}>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => updateQuantity(item.cart_id || item.id, 1)}
+                            >
                               +
                             </Button>
                             <Button
                               size="sm"
                               variant="ghost"
-                              onClick={() => removeFromCart(item.id)}
+                              onClick={() => removeFromCart(item.cart_id || item.id)}
                               className="ml-auto text-red-600"
                             >
                               🗑️

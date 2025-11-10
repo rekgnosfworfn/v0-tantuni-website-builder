@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { LogOut, Home } from "lucide-react"
+import { LogOut, Home, User } from "lucide-react"
 
 type AdminUser = {
   id: string
@@ -40,6 +40,12 @@ export function AdminHeader({ user }: { user: AdminUser }) {
           </div>
           <div className="flex items-center gap-4">
             <span className="text-sm text-gray-600">{user.full_name || user.email}</span>
+            <Link href="/admin/profile">
+              <Button variant="ghost" size="sm">
+                <User className="w-4 h-4 mr-2" />
+                Profil
+              </Button>
+            </Link>
             <Button variant="outline" size="sm" onClick={handleLogout} disabled={isLoggingOut}>
               <LogOut className="w-4 h-4 mr-2" />
               Çıkış
